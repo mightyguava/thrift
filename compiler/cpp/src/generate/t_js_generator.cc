@@ -634,6 +634,9 @@ void t_js_generator::generate_js_struct_definition(ofstream& out,
   vector<t_field*>::const_iterator m_iter;
 
   if (gen_node_) {
+    if (js_namespace(tstruct->get_program()).size() == 0) {
+      out << "var ";
+    }
     if (is_exported) {
       out << js_namespace(tstruct->get_program()) << tstruct->get_name() << " = "
           << "module.exports." << tstruct->get_name() << " = function(args) {" << endl;
@@ -972,6 +975,9 @@ void t_js_generator::generate_service_processor(t_service* tservice) {
   vector<t_function*> functions = tservice->get_functions();
   vector<t_function*>::iterator f_iter;
 
+  if (js_namespace(tservice->get_program()).size() == 0) {
+    f_service_ << "var ";
+  }
   f_service_ << js_namespace(tservice->get_program()) << service_name_ << "Processor = "
              << "exports.Processor = function(handler) ";
 
@@ -1246,6 +1252,9 @@ void t_js_generator::generate_service_rest(t_service* tservice) {
  */
 void t_js_generator::generate_service_client(t_service* tservice) {
   if (gen_node_) {
+    if (js_namespace(tservice->get_program()).size() == 0) {
+      f_service_ << "var ";
+    }
     f_service_ << js_namespace(tservice->get_program()) << service_name_ << "Client = "
                << "exports.Client = function(output, pClass) {" << endl;
   } else {

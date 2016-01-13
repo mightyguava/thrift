@@ -190,6 +190,10 @@ public:
     std::string::size_type loc;
     std::vector<std::string> pieces;
 
+    if (gen_node_) {
+      return pieces;
+    }
+
     if (ns.size() > 0) {
       while ((loc = ns.find(".")) != std::string::npos) {
         pieces.push_back(ns.substr(0, loc));
@@ -222,6 +226,10 @@ public:
   }
 
   std::string js_namespace(t_program* p) {
+    if (gen_node_) {
+      return "";
+    }
+
     std::string ns = p->get_namespace("js");
     if (ns.size() > 0) {
       ns += ".";
@@ -338,12 +346,12 @@ void t_js_generator::init_generator() {
 
   if (gen_node_) {
     f_types_ << "var ttypes = module.exports = {};" << endl;
+    return;
   }
 
   string pns;
 
   // setup the namespace
-  // TODO should the namespace just be in the directory structure for node?
   vector<string> ns_pieces = js_namespace_pieces(program_);
   if (ns_pieces.size() > 0) {
     for (size_t i = 0; i < ns_pieces.size(); ++i) {
@@ -634,15 +642,11 @@ void t_js_generator::generate_js_struct_definition(ofstream& out,
   vector<t_field*>::const_iterator m_iter;
 
   if (gen_node_) {
-    if (js_namespace(tstruct->get_program()).size() == 0) {
-      out << "var ";
-    }
+    out << "var " << tstruct->get_name() << " = ";
     if (is_exported) {
-      out << js_namespace(tstruct->get_program()) << tstruct->get_name() << " = "
-          << "module.exports." << tstruct->get_name() << " = function(args) {" << endl;
+      out << "module.exports." << tstruct->get_name() << " = function(args) {" << endl;
     } else {
-      out << js_namespace(tstruct->get_program()) << tstruct->get_name() << " = function(args) {"
-          << endl;
+      out << "function(args) {" << endl;
     }
   } else {
     out << js_namespace(tstruct->get_program()) << tstruct->get_name() << " = function(args) {"
@@ -657,10 +661,8 @@ void t_js_generator::generate_js_struct_definition(ofstream& out,
   indent_up();
 
   if (gen_node_ && is_exception) {
-    out << indent() << "Thrift.TException.call(this, \"" << js_namespace(tstruct->get_program())
-        << tstruct->get_name() << "\")" << endl;
-    out << indent() << "this.name = \"" << js_namespace(tstruct->get_program())
-        << tstruct->get_name() << "\"" << endl;
+    out << indent() << "Thrift.TException.call(this, \"" << tstruct->get_name() << "\")" << endl;
+    out << indent() << "this.name = \"" << tstruct->get_name() << "\"" << endl;
   }
 
   // members with arguments
@@ -1252,10 +1254,7 @@ void t_js_generator::generate_service_rest(t_service* tservice) {
  */
 void t_js_generator::generate_service_client(t_service* tservice) {
   if (gen_node_) {
-    if (js_namespace(tservice->get_program()).size() == 0) {
-      f_service_ << "var ";
-    }
-    f_service_ << js_namespace(tservice->get_program()) << service_name_ << "Client = "
+    f_service_ << "var " << service_name_ << "Client = "
                << "exports.Client = function(output, pClass) {" << endl;
   } else {
     f_service_ << js_namespace(tservice->get_program()) << service_name_
@@ -1306,9 +1305,9 @@ void t_js_generator::generate_service_client(t_service* tservice) {
 
   // utils for multiplexed services
   if (gen_node_) {
-    indent(f_service_) << js_namespace(tservice->get_program()) << service_name_
+    indent(f_service_) << service_name_
                        << "Client.prototype.seqid = function() { return this._seqid; }" << endl
-                       << js_namespace(tservice->get_program()) << service_name_
+                       << service_name_
                        << "Client.prototype.new_seqid = function() { return this._seqid += 1; }"
                        << endl;
   }
